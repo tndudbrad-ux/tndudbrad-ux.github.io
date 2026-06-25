@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오늘 뭐 먹지? 🍽️ 점메추 저메추 룰렛</title>
+<meta name="description" content="오늘 점심 뭐 먹지? 저녁 메뉴 추천! 돌려서 한 번에 정하는 점메추 저메추 음식 룰렛. 메뉴를 직접 추가할 수도 있어요.">
+<meta name="theme-color" content="#ff7eb3">
+<!-- Open Graph (카카오톡/페북 공유 시 미리보기) -->
+<meta property="og:title" content="오늘 뭐 먹지? 🍽️ 점메추 저메추 룰렛">
+<meta property="og:description" content="돌려서 한 번에 정하는 점심·저녁 메뉴 추천 룰렛!">
+<meta property="og:type" content="website">
+
+<!-- ▼▼▼ 구글 애드센스 코드 자리 (승인 후 여기에 붙여넣기) ▼▼▼ -->
+<!--
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-여기에본인ID"
+     crossorigin="anonymous"></script>
+-->
+<!-- ▲▲▲ 구글 애드센스 코드 자리 ▲▲▲ -->
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --pink: #ff7eb3;
+    --pink-deep: #ff5e9c;
+    --yellow: #ffd36e;
+    --mint: #7ee8c0;
+    --purple: #b794f6;
+    --cream: #fff9f0;
+    --ink: #4a3f55;
+  }
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Pretendard', 'Malgun Gothic', sans-serif;
+    background: linear-gradient(160deg, #ffe9f3 0%, #fff6e6 50%, #e8fff6 100%);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+    overflow-x: hidden;
+  }
+  .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; align-items: center; }
+
+  header { text-align: center; margin: 8px 0 4px; }
+  h1 { font-size: 1.9rem; font-weight: 800; letter-spacing: -1px;
+       background: linear-gradient(90deg, var(--pink-deep), var(--purple));
+       -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { font-size: .95rem; color: #9a8aa5; margin-top: 4px; }
+
+  /* 점심/저녁 토글 */
+  .toggle { display: flex; background: #fff; border-radius: 999px; padding: 5px;
+            box-shadow: 0 4px 14px rgba(255,126,179,.25); margin: 18px 0 10px; }
+  .toggle button { border: none; background: transparent; padding: 9px 26px; font-size: 1rem;
+                   font-weight: 700; color: #b3a6bd; border-radius: 999px; cursor: pointer;
+                   transition: all .25s; }
+  .toggle button.active { color: #fff; }
+  .toggle button.lunch.active { background: linear-gradient(135deg, var(--yellow), #ffba5a); }
+  .toggle button.dinner.active { background: linear-gradient(135deg, var(--purple), #8e6ff0); }
+
+  /* 룰렛 */
+  .wheel-wrap { position: relative; width: 320px; height: 320px; margin: 6px 0 14px; max-width: 88vw; max-height: 88vw; }
+  .pointer { position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+             width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent;
+             border-top: 30px solid var(--pink-deep); z-index: 5; filter: drop-shadow(0 3px 3px rgba(0,0,0,.2)); }
+  #wheel { width: 100%; height: 100%; border-radius: 50%;
+           box-shadow: 0 0 0 10px #fff, 0 12px 30px rgba(160,120,200,.35);
+           transition: transform 5s cubic-bezier(.17,.67,.18,1); display: block; }
+  .center-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+                width: 78px; height: 78px; border-radius: 50%; border: 5px solid #fff;
+                background: linear-gradient(135deg, var(--pink), var(--pink-deep)); color: #fff;
+                font-size: 1rem; font-weight: 800; cursor: pointer; z-index: 4;
+                box-shadow: 0 6px 16px rgba(255,94,156,.5); transition: transform .15s; }
+  .center-btn:active { transform: translate(-50%,-50%) scale(.92); }
+  .center-btn:disabled { opacity: .6; cursor: default; }
+
+  /* 결과 */
+  .result { min-height: 64px; text-align: center; margin: 4px 0 14px; }
+  .result .label { font-size: .9rem; color: #b3a6bd; }
+  .result .menu { font-size: 2rem; font-weight: 800; color: var(--pink-deep);
+                  opacity: 0; transform: scale(.6); transition: all .4s; }
+  .result .menu.show { opacity: 1; transform: scale(1); }
+
+  /* 메뉴 편집 */
+  .editor { width: 100%; background: #fff; border-radius: 20px; padding: 16px;
+            box-shadow: 0 6px 20px rgba(180,150,200,.18); margin-bottom: 16px; }
+  .editor h2 { font-size: 1rem; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .chip { background: #fff0f6; color: var(--pink-deep); border-radius: 999px; padding: 6px 12px;
+          font-size: .85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .chip button { border: none; background: transparent; color: var(--pink-deep); cursor: pointer;
+                 font-size: 1rem; line-height: 1; opacity: .6; }
+  .chip button:hover { opacity: 1; }
+  .add-row { display: flex; gap: 8px; }
+  .add-row input { flex: 1; border: 2px solid #ffe0ec; border-radius: 12px; padding: 10px 12px;
+                   font-size: .95rem; outline: none; transition: border .2s; }
+  .add-row input:focus { border-color: var(--pink); }
+  .add-row button { border: none; background: var(--mint); color: #fff; font-weight: 700;
+                    border-radius: 12px; padding: 0 18px; cursor: pointer; font-size: .95rem; }
+  .reset-link { font-size: .8rem; color: #c0b3ca; text-align: right; margin-top: 8px; cursor: pointer; }
+
+  /* 광고 자리 */
+  .ad-slot { width: 100%; min-height: 100px; background: repeating-linear-gradient(45deg,#fafafa,#fafafa 10px,#f3f3f3 10px,#f3f3f3 20px);
+             border: 1px dashed #ddd; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+             color: #bbb; font-size: .85rem; margin: 6px 0 18px; text-align: center; padding: 10px; }
+
+  footer { font-size: .78rem; color: #b9acc4; text-align: center; padding: 8px 0 20px; line-height: 1.6; }
+
+  /* 컨페티 */
+  .confetti { position: fixed; width: 10px; height: 10px; top: -20px; z-index: 99; pointer-events: none; border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🍽️ 오늘 뭐 먹지?</h1>
+    <p class="subtitle">돌려서 한 방에 정하는 점메추 · 저메추 룰렛</p>
+  </header>
+
+  <div class="toggle">
+    <button class="lunch active" id="btnLunch" onclick="switchMode('lunch')">☀️ 점심</button>
+    <button class="dinner" id="btnDinner" onclick="switchMode('dinner')">🌙 저녁</button>
+  </div>
+
+  <!-- 상단 광고 자리 -->
+  <div class="ad-slot">광고 자리 (애드센스 승인 후 이곳에 광고가 표시됩니다)</div>
+
+  <div class="wheel-wrap">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="600" height="600"></canvas>
+    <button class="center-btn" id="spinBtn" onclick="spin()">돌리기!</button>
+  </div>
+
+  <div class="result">
+    <div class="label">오늘의 추천 메뉴는?</div>
+    <div class="menu" id="resultMenu"></div>
+  </div>
+
+  <div class="editor">
+    <h2>✏️ 메뉴 편집 <span style="font-weight:400;color:#bbb;font-size:.8rem">(<span id="modeLabel">점심</span>)</span></h2>
+    <div class="chips" id="chips"></div>
+    <div class="add-row">
+      <input type="text" id="newItem" placeholder="메뉴 추가 (예: 마라탕)" maxlength="10"
+             onkeydown="if(event.key==='Enter')addItem()">
+      <button onclick="addItem()">추가</button>
+    </div>
+    <div class="reset-link" onclick="resetMenus()">기본 메뉴로 초기화 ↺</div>
+  </div>
+
+  <!-- 하단 광고 자리 -->
+  <div class="ad-slot">광고 자리 (애드센스 승인 후 이곳에 광고가 표시됩니다)</div>
+
+  <footer>
+    오늘 뭐 먹지? · 점메추 저메추 룰렛<br>
+    메뉴 고민은 룰렛에게 맡기세요 😋
+  </footer>
+</div>
+
+<script>
+const DEFAULT_MENUS = {
+  lunch: ['김치찌개','된장찌개','제육볶음','돈까스','김밥','라면','비빔밥','순두부','국밥','쌀국수','짜장면','샐러드'],
+  dinner: ['삼겹살','치킨','피자','회','곱창','족발','마라탕','파스타','초밥','부대찌개','떡볶이','보쌈']
+};
+const COLORS = ['#ff7eb3','#ffd36e','#7ee8c0','#b794f6','#ff9a8b','#8ec5ff','#ffb3d9','#a0e7a0'];
+
+let mode = 'lunch';
+let menus = JSON.parse(JSON.stringify(DEFAULT_MENUS));
+let rotation = 0;
+let spinning = false;
+
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+
+function drawWheel() {
+  const items = menus[mode];
+  const n = items.length;
+  const cx = 300, cy = 300, r = 290;
+  ctx.clearRect(0,0,600,600);
+  if (n === 0) {
+    ctx.fillStyle = '#eee'; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#999'; ctx.font='28px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('메뉴를 추가하세요',cx,cy); return;
+  }
+  const slice = (Math.PI*2)/n;
+  for (let i=0;i<n;i++){
+    const start = i*slice - Math.PI/2;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,start+slice); ctx.closePath();
+    ctx.fillStyle = COLORS[i % COLORS.length]; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=3; ctx.stroke();
+    // 텍스트
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(start+slice/2);
+    ctx.textAlign='right'; ctx.fillStyle='#fff'; ctx.font='bold 28px sans-serif';
+    ctx.shadowColor='rgba(0,0,0,.2)'; ctx.shadowBlur=3;
+    ctx.fillText(items[i], r-22, 10); ctx.restore();
+  }
+}
+
+function switchMode(m){
+  if(spinning) return;
+  mode = m;
+  document.getElementById('btnLunch').classList.toggle('active', m==='lunch');
+  document.getElementById('btnDinner').classList.toggle('active', m==='dinner');
+  document.getElementById('modeLabel').textContent = m==='lunch'?'점심':'저녁';
+  document.getElementById('resultMenu').classList.remove('show');
+  drawWheel(); renderChips();
+}
+
+function renderChips(){
+  const box = document.getElementById('chips');
+  box.innerHTML='';
+  menus[mode].forEach((item,i)=>{
+    const chip = document.createElement('div'); chip.className='chip';
+    chip.innerHTML = `<span>${item}</span><button onclick="removeItem(${i})">×</button>`;
+    box.appendChild(chip);
+  });
+}
+
+function addItem(){
+  const input = document.getElementById('newItem');
+  const val = input.value.trim();
+  if(!val) return;
+  if(menus[mode].length>=16){ alert('메뉴는 최대 16개까지 추가할 수 있어요!'); return; }
+  if(menus[mode].includes(val)){ alert('이미 있는 메뉴예요!'); input.value=''; return; }
+  menus[mode].push(val); input.value='';
+  drawWheel(); renderChips();
+}
+
+function removeItem(i){
+  menus[mode].splice(i,1);
+  drawWheel(); renderChips();
+}
+
+function resetMenus(){
+  menus[mode] = [...DEFAULT_MENUS[mode]];
+  drawWheel(); renderChips();
+  document.getElementById('resultMenu').classList.remove('show');
+}
+
+function spin(){
+  const items = menus[mode];
+  if(spinning || items.length===0) return;
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('resultMenu').classList.remove('show');
+
+  const n = items.length;
+  const slice = 360/n;
+  const winner = Math.floor(Math.random()*n);
+  // 당첨 슬라이스 중앙이 포인터(맨 위)에 오도록
+  const target = 360*6 + (360 - (winner*slice + slice/2));
+  rotation += target;
+  canvas.style.transform = `rotate(${rotation}deg)`;
+
+  setTimeout(()=>{
+    const el = document.getElementById('resultMenu');
+    el.textContent = items[winner];
+    el.classList.add('show');
+    spinning = false;
+    document.getElementById('spinBtn').disabled = false;
+    launchConfetti();
+  }, 5100);
+}
+
+function launchConfetti(){
+  for(let i=0;i<40;i++){
+    const c = document.createElement('div');
+    c.className='confetti';
+    c.style.left = Math.random()*100+'vw';
+    c.style.background = COLORS[Math.floor(Math.random()*COLORS.length)];
+    c.style.animation = `fall ${1+Math.random()*1.5}s linear forwards`;
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 2600);
+  }
+}
+// 컨페티 애니메이션 동적 추가
+const style = document.createElement('style');
+style.textContent = '@keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.3}}';
+document.head.appendChild(style);
+
+// 초기화
+drawWheel(); renderChips();
+</script>
+</body>
+</html>
